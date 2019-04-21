@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
+apply plugin: 'spinnaker.application'
+
+if (gradle.includedProviderProjects.contains(':front50-oracle')) {
+  tasks.startScripts.dependsOn(':front50-oracle:unpackSdk')
+  tasks.startScripts.mustRunAfter(':front50-oracle:unpackSdk')
+}
+
 ext {
   springConfigLocation = System.getProperty('spring.config.location', "${System.getProperty('user.home')}/.spinnaker/")
-  repackage = System.getProperty('springBoot.repackage', "false")
 }
 
-tasks.withType(org.springframework.boot.gradle.run.BootRunTask) {
+run {
   systemProperty('spring.config.location', project.springConfigLocation)
 }
-
-apply plugin: 'org.springframework.boot'
-apply plugin: 'spinnaker.package'
+mainClassName = 'com.netflix.spinnaker.front50.Main'
 
 configurations.all {
   exclude group: 'org.slf4j', module: 'slf4j-log4j12'
@@ -40,6 +44,7 @@ dependencies {
   compile spinnaker.dependency("korkStackdriver")
   compile spinnaker.dependency("korkSwagger")
   compile spinnaker.dependency("kork")
+  compile spinnaker.dependency("lombok")
 
   compile "com.graphql-java:graphql-spring-boot-starter:3.9.2"
 
@@ -51,4 +56,7 @@ dependencies {
   }
 }
 
-tasks.bootRepackage.enabled = Boolean.valueOf(project.repackage)
+test {
+  environment "AWS_ACCESS_KEY_ID", "null"
+  environment "AWS_SECRET_KEY", "null"
+}
